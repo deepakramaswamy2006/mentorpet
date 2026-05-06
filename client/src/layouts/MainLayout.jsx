@@ -1,48 +1,84 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
-  BookOpen, 
   CheckSquare, 
   MessageSquare, 
   FileText, 
-  BarChart2, 
   Map, 
-  Settings, 
   LogOut,
   Search,
   Bell,
   Menu,
   X,
   ChevronLeft,
-  Sparkles
+  Sparkles,
+  Trash2,
+  Clock,
+  ExternalLink
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getNotifications, markNotificationRead, deleteNotification } from '../services/api';
 
 const MainLayout = ({ children }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const location = useLocation();
   const { user, logout } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Notification states
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notificationRef = useRef(null);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await getNotifications();
+      setNotifications(res.data.data);
+    } catch (err) {
+      console.error('Error fetching notifications:', err);
+    }
+  };
 
   useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth < 1024) {
-        setIsSidebarOpen(false);
-      } else {
-        setIsSidebarOpen(true);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 60000); // Refresh every minute
+    return () => clearInterval(interval);
   }, []);
 
-  // Close mobile menu on route change
+  // Close notifications on click outside
   useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [location.pathname]);
+    const handleClickOutside = (event) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleMarkRead = async (id) => {
+    try {
+      await markNotificationRead(id);
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteNotification = async (id, e) => {
+    e.stopPropagation();
+    try {
+      await deleteNotification(id);
+      setNotifications(prev => prev.filter(n => n._id !== id));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   const menuItems = [
     { name: 'Dashboard', icon: <LayoutDashboard size={20} />, path: '/dashboard' },
@@ -55,12 +91,12 @@ const MainLayout = ({ children }) => {
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate('/login');
   };
 
   return (
-    <div className="flex h-screen bg-brand-bg text-white overflow-hidden font-sans selection:bg-brand-accent-magenta/30">
-      {/* Mobile Backdrop */}
+    <div className="flex h-screen bg-brand-bg text-white font-sans overflow-hidden">
+      {/* Mobile Menu Overlay */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div 
@@ -68,31 +104,29 @@ const MainLayout = ({ children }) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsMobileMenuOpen(false)}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] lg:hidden"
           />
         )}
       </AnimatePresence>
 
-      {/* Sidebar (Desktop & Mobile) */}
+      {/* Sidebar */}
       <aside 
-        className={`
-          fixed inset-y-0 left-0 z-50 lg:relative lg:flex flex-col sidebar-gradient transition-all duration-300 ease-in-out
-          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          ${isSidebarOpen ? 'w-72' : 'w-20'}
-        `}
+        className={`fixed inset-y-0 left-0 z-[101] flex flex-col sidebar-gradient border-r border-white/5 transition-all duration-300 transform lg:relative lg:translate-x-0 ${
+          isMobileMenuOpen ? 'translate-x-0 w-80' : '-translate-x-full lg:w-auto'
+        } ${isSidebarOpen ? 'lg:w-80' : 'lg:w-24'}`}
       >
-        <div className="p-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 magenta-gradient rounded-xl flex items-center justify-center font-black text-white shadow-lg shadow-magenta-500/20">
-              M
+        <div className="flex items-center justify-between p-6 h-24">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shadow-lg flex-shrink-0">
+              <span className="font-black text-2xl tracking-tighter text-white">M</span>
             </div>
             {(isSidebarOpen || isMobileMenuOpen) && (
               <motion.h1 
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="text-xl font-black tracking-tighter"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="font-black text-xl tracking-tight text-white"
               >
-                MENTORPET
+                MENTORPET AI
               </motion.h1>
             )}
           </div>
@@ -101,20 +135,20 @@ const MainLayout = ({ children }) => {
           </button>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto custom-scrollbar">
+        <nav className="flex-1 px-4 space-y-2 py-6 overflow-y-auto custom-scrollbar">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
-              <Link
+              <Link 
                 key={item.name}
                 to={item.path}
                 className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all duration-200 group relative ${
                   isActive 
-                    ? 'bg-white/10 text-white shadow-xl border border-white/10' 
-                    : 'text-white/40 hover:bg-white/5 hover:text-white'
+                    ? 'bg-white/20 text-white shadow-md' 
+                    : 'text-white/60 hover:bg-white/10 hover:text-white'
                 }`}
               >
-                <span className={`${isActive ? 'text-brand-accent-magenta' : 'group-hover:scale-110 transition-transform'}`}>
+                <span className={`${isActive ? 'text-white' : 'group-hover:scale-110 transition-transform'}`}>
                   {item.icon}
                 </span>
                 {(isSidebarOpen || isMobileMenuOpen) && (
@@ -123,7 +157,7 @@ const MainLayout = ({ children }) => {
                 {isActive && (
                   <motion.div 
                     layoutId="activeTab"
-                    className="absolute left-0 w-1 h-6 bg-brand-accent-magenta rounded-full"
+                    className="absolute left-0 w-1 h-6 bg-white rounded-full"
                   />
                 )}
               </Link>
@@ -131,10 +165,10 @@ const MainLayout = ({ children }) => {
           })}
         </nav>
 
-        <div className="p-4 border-t border-white/5">
+        <div className="p-4 border-t border-white/10">
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-4 w-full px-4 py-4 rounded-xl text-white/40 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200 group"
+            className="flex items-center gap-4 w-full px-4 py-4 rounded-xl text-white/60 hover:bg-red-500/20 hover:text-red-400 transition-all duration-200 group"
           >
             <LogOut size={20} className="group-hover:translate-x-1 transition-transform" />
             {(isSidebarOpen || isMobileMenuOpen) && <span className="font-bold text-sm">Logout Session</span>}
@@ -171,11 +205,88 @@ const MainLayout = ({ children }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 lg:gap-6">
-            <div className="relative cursor-pointer text-white/40 hover:text-white transition-colors p-2 bg-white/5 rounded-lg border border-white/5">
+          <div className="flex items-center gap-3 lg:gap-6 relative" ref={notificationRef}>
+            {/* Notification Bell */}
+            <div 
+              onClick={() => setShowNotifications(!showNotifications)}
+              className={`relative cursor-pointer transition-all p-2 rounded-lg border flex items-center justify-center ${
+                showNotifications 
+                  ? 'bg-brand-accent-magenta/10 border-brand-accent-magenta/30 text-brand-accent-magenta shadow-lg shadow-magenta-500/10' 
+                  : 'text-white/40 hover:text-white bg-white/5 border-white/5'
+              }`}
+            >
               <Bell size={20} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-brand-accent-magenta rounded-full ring-2 ring-brand-bg"></span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-brand-accent-magenta text-[10px] font-black rounded-full flex items-center justify-center ring-2 ring-brand-bg text-white">
+                  {unreadCount}
+                </span>
+              )}
             </div>
+
+            {/* Notification Dropdown */}
+            <AnimatePresence>
+              {showNotifications && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className="absolute right-0 top-14 w-80 lg:w-96 bg-[#151926] rounded-2xl overflow-hidden z-[100] shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10"
+                >
+                  <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/5">
+                    <h4 className="font-bold text-sm uppercase tracking-widest text-white/60">Notifications</h4>
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-lg bg-brand-accent-magenta/20 text-brand-accent-magenta">
+                      {notifications.length} Total
+                    </span>
+                  </div>
+                  
+                  <div className="max-h-96 overflow-y-auto custom-scrollbar">
+                    {notifications.length > 0 ? (
+                      notifications.map((n) => (
+                        <div 
+                          key={n._id}
+                          onClick={() => handleMarkRead(n._id)}
+                          className={`p-4 border-b border-white/5 cursor-pointer hover:bg-white/2 transition-all group relative ${!n.read ? 'bg-brand-accent-purple/5' : ''}`}
+                        >
+                          {!n.read && <div className="absolute left-2 top-1/2 -translate-y-1/2 w-1 h-10 bg-brand-accent-magenta rounded-full"></div>}
+                          <div className="flex justify-between items-start gap-3">
+                            <div className="p-2 rounded-lg bg-white/5 text-brand-accent-purple">
+                              <Clock size={16} />
+                            </div>
+                            <div className="flex-1">
+                              <p className={`text-sm font-bold ${!n.read ? 'text-white' : 'text-white/80'}`}>{n.title}</p>
+                              <p className="text-xs text-white/70 mt-1 line-clamp-2">{n.message}</p>
+                              <p className="text-[10px] text-white/40 mt-2 uppercase font-black">{new Date(n.createdAt).toLocaleTimeString()}</p>
+                            </div>
+                            <button 
+                              onClick={(e) => handleDeleteNotification(n._id, e)}
+                              className="p-1 text-white/0 group-hover:text-white/20 hover:text-red-400 transition-all"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="py-12 text-center text-white/20">
+                        <Bell size={48} className="mx-auto mb-4 opacity-10" />
+                        <p className="text-xs font-bold uppercase tracking-widest">All clear!</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {notifications.length > 0 && (
+                    <div className="p-3 bg-white/2 text-center">
+                      <button 
+                        onClick={() => navigate('/dashboard/planner')}
+                        className="text-[10px] font-black uppercase tracking-widest text-brand-accent-magenta hover:text-white transition-all flex items-center justify-center gap-1 mx-auto"
+                      >
+                        Manage Tasks <ExternalLink size={10} />
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
             
             <div className="flex items-center gap-3 pl-4 lg:pl-6 border-l border-white/5">
               <div className="text-right hidden sm:block">

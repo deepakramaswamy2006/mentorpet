@@ -33,5 +33,8 @@ export const login = (formData) => API.post('/auth/login', formData);
 export const register = (formData) => API.post('/auth/register', formData);
 export const getMe = () => API.get('/auth/me');
 export const getDashboardStats = () => API.get('/tasks/stats');
+export const getNotifications = () => API.get('/notifications');
+export const markNotificationRead = (id) => API.put(`/notifications/${id}`);
+export const deleteNotification = (id) => API.delete(`/notifications/${id}`);
 
 export default API;

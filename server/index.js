@@ -32,6 +32,7 @@ app.use('/api/v1/tasks', require('./routes/taskRoutes'));
 app.use('/api/v1/ai', require('./routes/aiRoutes'));
 app.use('/api/v1/notes', require('./routes/noteRoutes'));
 app.use('/api/v1/videos', require('./routes/videoRoutes'));
+app.use('/api/v1/notifications', require('./routes/notificationRoutes'));
 
 // Health check
 app.get('/api/v1/health', (req, res) => {
