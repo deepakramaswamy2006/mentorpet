@@ -4,15 +4,21 @@ const path = require('path');
 const { uploadNote, getNotes, askAboutNote, deleteNote } = require('../controllers/noteController');
 const { protect } = require('../middleware/authMiddleware');
 
+const fs = require('fs');
+
 const router = express.Router();
 
 // Multer config
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/');
+    const uploadPath = path.join(__dirname, '../uploads/');
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
-    cb(null, `${Date.now()}-${file.originalname}`);
+    cb(null, `${Date.now()}-${file.originalname.replace(/\s+/g, '_')}`);
   }
 });
 
