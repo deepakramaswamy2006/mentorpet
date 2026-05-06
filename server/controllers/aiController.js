@@ -1,21 +1,46 @@
 const { getChatCompletion } = require('../services/aiService');
+const { YoutubeTranscript } = require('youtube-transcript');
+
+// Helper to extract YouTube Video ID
+const getYoutubeId = (url) => {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+};
 
 // @desc    Ask AI Tutor
 // @route   POST /api/ai/tutor
 // @access  Private
 exports.chatWithTutor = async (req, res) => {
   try {
-    const { message, history } = req.body;
+    let { message, history } = req.body;
+    
+    // Check if message contains a YouTube link
+    const youtubeId = getYoutubeId(message);
+    let transcriptData = '';
+    
+    if (youtubeId) {
+      try {
+        const transcript = await YoutubeTranscript.fetchTranscript(youtubeId);
+        // Truncate transcript to ~6000 words to avoid Groq TPM limits
+        transcriptData = transcript.map(t => t.text).join(' ').substring(0, 25000); 
+        message = `User has provided a YouTube video link. Please summarize this video based on its transcript (truncated if very long):\n\nTRANSCRIPT:\n${transcriptData}\n\nUSER QUESTION/MESSAGE: ${message}`;
+      } catch (err) {
+        console.error('Transcript Fetch Error:', err);
+        // If transcript fails, we just proceed with the original message
+      }
+    }
     
     const messages = [
-      { role: 'system', content: 'You are MENTORPET AI, a helpful and knowledgeable academic tutor. Your goal is to help students understand concepts, solve problems, and provide study guidance. Be concise, professional, and encouraging.' },
+      { role: 'system', content: 'You are MENTORPET AI, a helpful and knowledgeable academic tutor. If a transcript is provided, summarize it clearly with key takeaways, main concepts, and a concise conclusion. Otherwise, help students understand concepts, solve problems, and provide study guidance. Be concise, professional, and encouraging.' },
       ...(history || []),
       { role: 'user', content: message }
     ];
 
-    const response = await getChatCompletion(messages);
+    const response = await getChatCompletion(messages, 'llama-3.3-70b-versatile');
     res.status(200).json({ success: true, data: response });
   } catch (err) {
+    console.error('AI Tutor Error:', err);
     res.status(500).json({ success: false, message: err.message });
   }
 };
