@@ -14,7 +14,12 @@ const app = express();
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.CLIENT_URL || '*',
+  origin: [
+    'http://localhost:5173', 
+    'http://127.0.0.1:5173', 
+    'https://mentorpet-git-main-deepak-rs-projects-22f24c8e.vercel.app',
+    /\.vercel\.app$/ // Allow all Vercel previews
+  ],
   credentials: true
 }));
 app.use(express.json());
