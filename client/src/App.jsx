@@ -11,8 +11,8 @@ import Notes from './pages/Notes';
 import Quiz from './pages/Quiz';
 import Roadmap from './pages/Roadmap';
 import MainLayout from './layouts/MainLayout';
-
 import LearnNew from './pages/LearnNew';
+import Jobs from './pages/Jobs';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -41,6 +41,7 @@ function App() {
                   <Route path="/quiz" element={<Quiz />} />
                   <Route path="/roadmap" element={<Roadmap />} />
                   <Route path="/learn" element={<LearnNew />} />
+                  <Route path="/jobs" element={<Jobs />} />
                 </Routes>
               </MainLayout>
             </ProtectedRoute>

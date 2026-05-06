@@ -15,7 +15,8 @@ import {
   Sparkles,
   Trash2,
   Clock,
-  ExternalLink
+  ExternalLink,
+  Briefcase
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -87,6 +88,7 @@ const MainLayout = ({ children }) => {
     { name: 'AI Tutor', icon: <MessageSquare size={20} />, path: '/dashboard/tutor' },
     { name: 'Learn New', icon: <Sparkles size={20} />, path: '/dashboard/learn' },
     { name: 'Notes', icon: <FileText size={20} />, path: '/dashboard/notes' },
+    { name: 'Browse Jobs', icon: <Briefcase size={20} />, path: '/dashboard/jobs' },
   ];
 
   const handleLogout = () => {
@@ -290,8 +292,7 @@ const MainLayout = ({ children }) => {
             
             <div className="flex items-center gap-3 pl-4 lg:pl-6 border-l border-white/5">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-black tracking-tight">{user?.name || 'Academic Pro'}</p>
-                <p className="text-[10px] uppercase font-black text-brand-accent-purple tracking-widest opacity-60">Elite Student</p>
+                <p className="text-sm font-black tracking-tight">{user?.name || 'User'}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-accent-purple to-brand-accent-magenta flex items-center justify-center font-black text-lg shadow-lg ring-1 ring-white/20">
                 {user?.name?.[0]?.toUpperCase() || 'P'}
