@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, User, Bot, Sparkles, Trash2, Command } from 'lucide-react';
+import { Send, User, PawPrint, Sparkles, Trash2, Command } from 'lucide-react';
 import API from '../services/api';
 
 const AITutor = () => {
@@ -48,7 +48,7 @@ const AITutor = () => {
       <div className="px-8 py-4 border-b border-white/5 flex items-center justify-between bg-white/5 backdrop-blur-xl z-10">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full magenta-gradient flex items-center justify-center shadow-lg shadow-magenta-500/20">
-            <Bot className="text-white" size={20} />
+            <PawPrint className="text-white" size={20} />
           </div>
           <div>
             <h3 className="font-bold text-lg leading-tight">MENTORPET AI Tutor</h3>
@@ -81,7 +81,7 @@ const AITutor = () => {
                 <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center shadow-md ${
                   msg.role === 'user' ? 'bg-white/10' : 'magenta-gradient'
                 }`}>
-                  {msg.role === 'user' ? <User size={16} /> : <Bot size={16} />}
+                  {msg.role === 'user' ? <User size={16} /> : <PawPrint size={16} />}
                 </div>
                 <div className={`p-5 rounded-2xl ${
                   msg.role === 'user' 
@@ -103,7 +103,7 @@ const AITutor = () => {
             >
               <div className="flex gap-4 max-w-[80%]">
                 <div className="w-8 h-8 rounded-full magenta-gradient flex items-center justify-center">
-                  <Bot size={16} />
+                  <PawPrint size={16} />
                 </div>
                 <div className="glass p-4 rounded-2xl border-white/10 flex items-center gap-2">
                   <span className="w-1.5 h-1.5 bg-white/40 rounded-full animate-bounce"></span>
