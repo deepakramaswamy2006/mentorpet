@@ -3,25 +3,42 @@ node_modules/
 client/node_modules/
 server/node_modules/
 
-# Environment variables
+# Environment variables (Critical for security)
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production
+.env.production.local
 server/.env
 client/.env
+client/.env.production
 
-# Build outputs
+# User Uploads
+server/uploads/*
+!server/uploads/.gitkeep
+*.pdf
+*.docx
+*.doc
+
+# Build & Output
 dist/
 client/dist/
 build/
+.vercel/
 
-# IDE files
+# IDE & Editor files
 .vscode/
 .idea/
 *.swp
 *.swo
+*.sublime-project
+*.sublime-workspace
 
 # OS files
 .DS_Store
 Thumbs.db
+Desktop.ini
 
 # Logs
 npm-debug.log*
@@ -30,6 +47,8 @@ yarn-error.log*
 logs/
 *.log
 
-# Vite cache
+# Cache and temporary files
 .vite/
 client/.vite/
+.eslintcache
+.cache/
