@@ -39,18 +39,27 @@ exports.summarizeNotes = async (req, res) => {
   }
 };
 
-// Helper to parse JSON from AI response (handles markdown blocks)
+// Helper to parse JSON from AI response (handles markdown blocks and <think> tags)
 const parseAIJSON = (content) => {
   try {
-    // If it's already pure JSON
-    return JSON.parse(content);
-  } catch (e) {
-    // Try to extract JSON from code blocks
-    const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) || content.match(/{[\s\S]*}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[1] || jsonMatch[0]);
+    // 1. Strip DeepSeek thinking blocks if present
+    const cleanContent = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    
+    // 2. Try direct parse
+    try {
+      return JSON.parse(cleanContent);
+    } catch (e) {
+      // 3. Try regex extraction
+      const jsonMatch = cleanContent.match(/```json\n?([\s\S]*?)\n?```/) || cleanContent.match(/{[\s\S]*}/);
+      if (jsonMatch) {
+        const potentialJSON = jsonMatch[1] || jsonMatch[0];
+        return JSON.parse(potentialJSON.trim());
+      }
+      throw new Error('No valid JSON found in AI response');
     }
-    throw new Error('Failed to parse AI JSON response');
+  } catch (err) {
+    console.error('JSON Parse Error. Content was:', content);
+    throw new Error('Failed to parse AI response. Please try again.');
   }
 };
 
@@ -62,11 +71,11 @@ exports.generateQuiz = async (req, res) => {
     const { topic, difficulty } = req.body;
     
     const messages = [
-      { role: 'system', content: 'You are a quiz generator. Generate 5 multiple-choice questions (MCQs) on the given topic. Return only a pure JSON object: { "quizzes": [{ "question": "", "options": ["", "", "", ""], "correctAnswer": "" }] }' },
-      { role: 'user', content: `Topic: ${topic}, Difficulty: ${difficulty}` }
+      { role: 'system', content: 'You are an expert academic professor. Your task is to generate a STRICTLY RELEVANT and scientifically accurate quiz based on the provided topic. Do not deviate from the subject or include unrelated general knowledge. Generate exactly 10 high-quality MCQs. Each question must have 4 plausible options, but ONLY ONE must be factually correct. RANDOMIZE the position of the correct answer among the options. Return ONLY a pure JSON object in this format: { "quizzes": [{ "question": "string", "options": ["string", "string", "string", "string"], "correctAnswer": "string" }] }. No markdown, no thinking, no extra text.' },
+      { role: 'user', content: `STRICT TOPIC: ${topic}\nDIFFICULTY LEVEL: ${difficulty}` }
     ];
 
-    const response = await getChatCompletion(messages, 'deepseek-r1-distill-llama-70b');
+    const response = await getChatCompletion(messages, 'llama-3.3-70b-versatile');
     res.status(200).json({ success: true, data: parseAIJSON(response) });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

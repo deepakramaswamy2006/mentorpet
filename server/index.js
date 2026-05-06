@@ -31,6 +31,7 @@ app.use('/api/v1/auth', require('./routes/authRoutes'));
 app.use('/api/v1/tasks', require('./routes/taskRoutes'));
 app.use('/api/v1/ai', require('./routes/aiRoutes'));
 app.use('/api/v1/notes', require('./routes/noteRoutes'));
+app.use('/api/v1/videos', require('./routes/videoRoutes'));
 
 // Health check
 app.get('/api/v1/health', (req, res) => {

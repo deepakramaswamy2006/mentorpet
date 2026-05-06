@@ -12,6 +12,8 @@ import Quiz from './pages/Quiz';
 import Roadmap from './pages/Roadmap';
 import MainLayout from './layouts/MainLayout';
 
+import LearnNew from './pages/LearnNew';
+
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   if (loading) return <div className="h-screen w-screen flex items-center justify-center bg-brand-bg text-white">Loading...</div>;
@@ -38,7 +40,7 @@ function App() {
                   <Route path="/notes" element={<Notes />} />
                   <Route path="/quiz" element={<Quiz />} />
                   <Route path="/roadmap" element={<Roadmap />} />
-                  {/* Add more dashboard routes here */}
+                  <Route path="/learn" element={<LearnNew />} />
                 </Routes>
               </MainLayout>
             </ProtectedRoute>

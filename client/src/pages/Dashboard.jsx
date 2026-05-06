@@ -76,10 +76,7 @@ const Dashboard = () => {
           <p className="text-white/40 mt-1">Here is your real-time study analytics dashboard.</p>
         </div>
         <div className="flex gap-3">
-          <div className="glass px-4 py-2 flex items-center gap-2">
-            <Flame className="text-orange-500" size={18} />
-            <span className="font-bold text-white">7 Day Streak</span>
-          </div>
+          {/* Real data only - Streak removed until logic implemented */}
         </div>
       </div>
 
@@ -93,10 +90,10 @@ const Dashboard = () => {
             trend: `${stats?.completedTasks} / ${stats?.totalTasks} Tasks` 
           },
           { 
-            label: 'Estimated Focus Time', 
-            value: `${stats?.completedTasks * 1.5}h`, 
+            label: 'Tasks Accomplished', 
+            value: stats?.completedTasks, 
             icon: <Clock className="text-brand-accent-purple" />, 
-            trend: 'Last 7 Days' 
+            trend: 'Verified Completions' 
           },
           { 
             label: 'Active Goals', 
