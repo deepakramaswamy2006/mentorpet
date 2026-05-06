@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Zap, 
@@ -8,7 +8,8 @@ import {
   TrendingUp, 
   BookOpen,
   ChevronRight,
-  Flame
+  Flame,
+  LayoutDashboard
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -22,35 +23,38 @@ import {
   AreaChart, 
   Area 
 } from 'recharts';
+import { getDashboardStats } from '../services/api';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const studyData = [
-    { day: 'Mon', hours: 4.5 },
-    { day: 'Tue', hours: 6.2 },
-    { day: 'Wed', hours: 3.8 },
-    { day: 'Thu', hours: 7.1 },
-    { day: 'Fri', hours: 5.5 },
-    { day: 'Sat', hours: 8.0 },
-    { day: 'Sun', hours: 4.2 },
-  ];
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await getDashboardStats();
+        setStats(res.data.data);
+      } catch (err) {
+        console.error('Error fetching dashboard stats:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
 
-  const subjectPerformance = [
-    { name: 'Data Structures', score: 92, color: '#a855f7' },
-    { name: 'Machine Learning', score: 88, color: '#d946ef' },
-    { name: 'Web Development', score: 95, color: '#10b981' },
-    { name: 'Mathematics', score: 76, color: '#fbbf24' },
-  ];
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="w-10 h-10 border-t-4 border-brand-accent-purple rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   const container = {
     hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
+    show: { opacity: 1, transition: { staggerChildren: 0.1 } }
   };
 
   const item = {
@@ -69,34 +73,44 @@ const Dashboard = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold">Welcome back, {user?.name?.split(' ')[0] || 'Student'} 👋</h2>
-          <p className="text-white/40 mt-1">Here is your personalized AI study workspace.</p>
+          <p className="text-white/40 mt-1">Here is your real-time study analytics dashboard.</p>
         </div>
         <div className="flex gap-3">
           <div className="glass px-4 py-2 flex items-center gap-2">
             <Flame className="text-orange-500" size={18} />
             <span className="font-bold text-white">7 Day Streak</span>
           </div>
-          <button className="magenta-gradient px-6 py-2 rounded-full font-bold shadow-lg shadow-magenta-500/20 hover:scale-105 transition-transform">
-            Start Study Session
-          </button>
         </div>
       </div>
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
-          { label: 'Productivity Score', value: '94%', icon: <Zap className="text-brand-accent-gold" />, trend: '+5.2%' },
-          { label: 'Study Hours (Weekly)', value: '38.4h', icon: <Clock className="text-brand-accent-purple" />, trend: '+12.5%' },
-          { label: 'Roadmap Progress', value: '12 / 24', icon: <Target className="text-brand-accent-magenta" />, trend: '50% Complete' },
+          { 
+            label: 'Completion Rate', 
+            value: `${stats?.totalTasks > 0 ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0}%`, 
+            icon: <Zap className="text-brand-accent-gold" />, 
+            trend: `${stats?.completedTasks} / ${stats?.totalTasks} Tasks` 
+          },
+          { 
+            label: 'Estimated Focus Time', 
+            value: `${stats?.completedTasks * 1.5}h`, 
+            icon: <Clock className="text-brand-accent-purple" />, 
+            trend: 'Last 7 Days' 
+          },
+          { 
+            label: 'Active Goals', 
+            value: stats?.todoTasks + stats?.inProgressTasks, 
+            icon: <Target className="text-brand-accent-magenta" />, 
+            trend: 'In Your Planner' 
+          },
         ].map((card, idx) => (
           <motion.div key={idx} variants={item} className="glass p-6 group hover:border-white/20 transition-all">
             <div className="flex items-center justify-between mb-4">
               <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center">
                 {card.icon}
               </div>
-              <span className={`text-xs font-bold px-2 py-1 rounded-full ${
-                card.trend.includes('+') ? 'bg-green-500/10 text-green-400' : 'bg-brand-accent-purple/10 text-brand-accent-purple'
-              }`}>
+              <span className="text-xs font-bold px-2 py-1 rounded-full bg-brand-accent-purple/10 text-brand-accent-purple">
                 {card.trend}
               </span>
             </div>
@@ -113,16 +127,13 @@ const Dashboard = () => {
           <div className="flex items-center justify-between mb-6">
             <h3 className="font-bold text-lg flex items-center gap-2">
               <TrendingUp size={18} className="text-brand-accent-purple" />
-              Learning Activity
+              Task Activity
             </h3>
-            <select className="bg-white/5 border border-white/10 rounded-lg text-xs px-2 py-1 outline-none">
-              <option>Last 7 Days</option>
-              <option>Last 30 Days</option>
-            </select>
+            <span className="text-xs text-white/40 font-medium uppercase tracking-widest">Weekly Overview</span>
           </div>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={studyData}>
+              <AreaChart data={stats?.dailyStats || []}>
                 <defs>
                   <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#a855f7" stopOpacity={0.3}/>
@@ -146,10 +157,10 @@ const Dashboard = () => {
         <motion.div variants={item} className="glass p-6">
           <h3 className="font-bold text-lg mb-6 flex items-center gap-2">
             <Trophy size={18} className="text-brand-accent-gold" />
-            Top Subject Performance
+            Subject Progress
           </h3>
           <div className="space-y-6">
-            {subjectPerformance.map((sub, idx) => (
+            {stats?.subjectStats && stats.subjectStats.length > 0 ? stats.subjectStats.map((sub, idx) => (
               <div key={idx} className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium">{sub.name}</span>
@@ -165,46 +176,15 @@ const Dashboard = () => {
                   ></motion.div>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="py-10 text-center text-white/20">
+                <LayoutDashboard size={48} className="mx-auto mb-4 opacity-10" />
+                <p>No subject data available yet. Start adding tasks to see your progress!</p>
+              </div>
+            )}
           </div>
         </motion.div>
       </div>
-
-      {/* Actionable Roadmap */}
-      <motion.div variants={item} className="glass p-8">
-        <div className="flex items-center justify-between mb-8">
-          <h3 className="font-bold text-xl flex items-center gap-3">
-            <Target size={22} className="text-brand-accent-magenta" />
-            Your Daily Study Roadmap
-          </h3>
-          <button className="text-brand-accent-purple text-sm font-semibold hover:underline flex items-center gap-1">
-            View Full Roadmap <ChevronRight size={16} />
-          </button>
-        </div>
-
-        <div className="relative space-y-8 pl-8 before:content-[''] before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-white/10">
-          {[
-            { step: 'Step 1', title: 'Deep dive into Advanced React Patterns', desc: 'Focus on higher-order components and render props for state management.', status: 'completed' },
-            { step: 'Step 2', title: 'Practice Data Structures (Trees)', desc: 'Solve 3 problems on LeetCode related to Binary Search Trees and DFS.', status: 'in-progress' },
-            { step: 'Step 3', title: 'Review Machine Learning Fundamentals', desc: 'Watch videos on Linear Regression and Gradient Descent optimization.', status: 'pending' },
-          ].map((roadmap, idx) => (
-            <div key={idx} className="relative group">
-              <div className={`absolute -left-[31px] top-1 w-6 h-6 rounded-full border-4 border-brand-bg z-10 ${
-                roadmap.status === 'completed' ? 'bg-green-500' : roadmap.status === 'in-progress' ? 'bg-brand-accent-purple' : 'bg-white/10'
-              }`}></div>
-              <div className="glass p-6 group-hover:bg-white/5 transition-all cursor-pointer">
-                <span className={`text-xs font-bold uppercase tracking-wider ${
-                  roadmap.status === 'completed' ? 'text-green-400' : roadmap.status === 'in-progress' ? 'text-brand-accent-purple' : 'text-white/40'
-                }`}>
-                  {roadmap.step}
-                </span>
-                <h4 className="font-bold text-lg mt-1">{roadmap.title}</h4>
-                <p className="text-white/40 text-sm mt-1">{roadmap.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </motion.div>
     </motion.div>
   );
 };

@@ -16,5 +16,6 @@ API.interceptors.request.use((req) => {
 export const login = (formData) => API.post('/auth/login', formData);
 export const register = (formData) => API.post('/auth/register', formData);
 export const getMe = () => API.get('/auth/me');
+export const getDashboardStats = () => API.get('/tasks/stats');
 
 export default API;

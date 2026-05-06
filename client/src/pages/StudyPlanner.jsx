@@ -12,7 +12,8 @@ import {
   MoreVertical,
   BookOpen,
   Play,
-  Check
+  Check,
+  CheckCircle2
 } from 'lucide-react';
 import API from '../services/api';
 
@@ -20,6 +21,8 @@ const StudyPlanner = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterPriority, setFilterPriority] = useState('All');
   const [newTask, setNewTask] = useState({
     title: '',
     subject: '',
@@ -61,7 +64,7 @@ const StudyPlanner = () => {
       await API.put(`/tasks/${id}`, { status: newStatus });
       fetchTasks();
     } catch (err) {
-      console.error('Error updating task status:', err);
+      console.error('Error updating status:', err);
     }
   };
 
@@ -76,26 +79,33 @@ const StudyPlanner = () => {
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'High': return 'text-red-400 bg-red-400/10';
-      case 'Medium': return 'text-brand-accent-purple bg-brand-accent-purple/10';
-      case 'Low': return 'text-blue-400 bg-blue-400/10';
-      default: return 'text-white/40 bg-white/5';
+      case 'High': return 'bg-red-500/20 text-red-400';
+      case 'Medium': return 'bg-orange-500/20 text-orange-400';
+      case 'Low': return 'bg-green-500/20 text-green-400';
+      default: return 'bg-white/10 text-white/40';
     }
   };
 
+  const filteredTasks = tasks.filter(task => {
+    const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          task.subject.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesPriority = filterPriority === 'All' || task.priority === filterPriority;
+    return matchesSearch && matchesPriority;
+  });
+
   return (
-    <div className="space-y-8">
+    <div className="max-w-7xl mx-auto space-y-8 pb-20">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h2 className="text-3xl font-bold">Study Planner</h2>
-          <p className="text-white/40 mt-1">Manage your academic tasks and deadlines.</p>
+          <p className="text-white/40 mt-1">Organize your academic goals and track your progress.</p>
         </div>
         <button 
           onClick={() => setShowAddModal(true)}
-          className="magenta-gradient px-6 py-3 rounded-xl font-bold shadow-lg shadow-magenta-500/20 hover:scale-105 transition-all flex items-center gap-2"
+          className="magenta-gradient px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:scale-105 transition-all shadow-lg shadow-magenta-500/20"
         >
-          <Plus size={20} /> Add New Task
+          <Plus size={20} /> Create New Plan
         </button>
       </div>
 
@@ -105,39 +115,46 @@ const StudyPlanner = () => {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
           <input 
             type="text" 
-            placeholder="Search tasks..." 
+            placeholder="Search by title or subject..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:ring-2 focus:ring-brand-accent-purple/50"
           />
         </div>
         <div className="flex gap-4">
-          <button className="glass px-4 py-3 flex items-center gap-2 text-sm font-medium hover:bg-white/10">
-            <Filter size={18} className="text-white/40" /> Filter
-          </button>
-          <button className="glass px-4 py-3 flex items-center gap-2 text-sm font-medium hover:bg-white/10">
-            <Calendar size={18} className="text-white/40" /> Calendar
-          </button>
+          <select 
+            value={filterPriority}
+            onChange={(e) => setFilterPriority(e.target.value)}
+            className="glass px-4 py-3 text-sm font-medium hover:bg-white/10 bg-brand-bg border-white/10 focus:outline-none"
+          >
+            <option value="All">All Priorities</option>
+            <option value="High">High Priority</option>
+            <option value="Medium">Medium Priority</option>
+            <option value="Low">Low Priority</option>
+          </select>
         </div>
       </div>
 
-      {/* Task Columns / List */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Kanban Board */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {['To Do', 'In Progress', 'Completed'].map((status) => (
-          <div key={status} className="space-y-4">
+          <div key={status} className="space-y-6">
             <div className="flex items-center justify-between px-2">
-              <h3 className="font-bold flex items-center gap-2">
+              <h3 className="font-black text-sm uppercase tracking-widest text-white/40 flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full ${
-                  status === 'To Do' ? 'bg-white/20' : status === 'In Progress' ? 'bg-brand-accent-purple' : 'bg-green-500'
+                  status === 'To Do' ? 'bg-white/20' : 
+                  status === 'In Progress' ? 'bg-brand-accent-purple' : 'bg-green-500'
                 }`}></span>
                 {status}
-                <span className="text-white/20 ml-2 text-sm font-medium">
-                  {tasks.filter(t => t.status === status).length}
+                <span className="ml-2 bg-white/5 px-2 py-0.5 rounded text-[10px] text-white/60">
+                  {filteredTasks.filter(t => t.status === status).length}
                 </span>
               </h3>
               <MoreVertical size={16} className="text-white/20 cursor-pointer" />
             </div>
 
             <div className="space-y-4 min-h-[500px]">
-              {tasks.filter(t => t.status === status).map((task, index) => (
+              {filteredTasks.filter(t => t.status === status).map((task, index) => (
                 <motion.div 
                   layout
                   key={task._id || index}
@@ -191,7 +208,7 @@ const StudyPlanner = () => {
                       )}
                       {status === 'Completed' && (
                         <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 text-white/40 text-xs font-bold">
-                          <CheckCircle size={12} /> Finished
+                          <CheckCircle2 size={12} /> Finished
                         </span>
                       )}
                     </div>
@@ -200,9 +217,9 @@ const StudyPlanner = () => {
                 </motion.div>
               ))}
               
-              {tasks.filter(t => t.status === status).length === 0 && (
-                <div className="h-24 border-2 border-dashed border-white/5 rounded-2xl flex items-center justify-center text-white/10 text-sm italic">
-                  No tasks here
+              {filteredTasks.filter(t => t.status === status).length === 0 && (
+                <div className="border-2 border-dashed border-white/5 rounded-2xl h-32 flex items-center justify-center text-white/10 text-sm italic">
+                  No tasks found
                 </div>
               )}
             </div>
@@ -218,16 +235,16 @@ const StudyPlanner = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-brand-bg/80 backdrop-blur-sm"
               onClick={() => setShowAddModal(false)}
-            />
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            ></motion.div>
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="glass max-w-lg w-full p-8 z-10 relative overflow-hidden"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="glass max-w-lg w-full p-8 relative z-10 border-white/20"
             >
-              <h3 className="text-2xl font-bold mb-6">Create New Study Task</h3>
+              <h3 className="text-2xl font-bold mb-6">Create Study Plan</h3>
               <form onSubmit={handleAddTask} className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white/60">Task Title</label>
@@ -236,7 +253,7 @@ const StudyPlanner = () => {
                     required
                     value={newTask.title}
                     onChange={(e) => setNewTask({...newTask, title: e.target.value})}
-                    placeholder="e.g. Finish React Chapter"
+                    placeholder="e.g., Study Quantum Mechanics"
                     className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-brand-accent-purple/50"
                   />
                 </div>
@@ -248,7 +265,7 @@ const StudyPlanner = () => {
                       required
                       value={newTask.subject}
                       onChange={(e) => setNewTask({...newTask, subject: e.target.value})}
-                      placeholder="e.g. CS101"
+                      placeholder="e.g., Physics"
                       className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-brand-accent-purple/50"
                     />
                   </div>
@@ -259,9 +276,9 @@ const StudyPlanner = () => {
                       onChange={(e) => setNewTask({...newTask, priority: e.target.value})}
                       className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-brand-accent-purple/50"
                     >
-                      <option value="Low">Low</option>
-                      <option value="Medium">Medium</option>
                       <option value="High">High</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Low">Low</option>
                     </select>
                   </div>
                 </div>
@@ -272,30 +289,30 @@ const StudyPlanner = () => {
                     required
                     value={newTask.deadline}
                     onChange={(e) => setNewTask({...newTask, deadline: e.target.value})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-brand-accent-purple/50 text-white"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-brand-accent-purple/50"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/60">Description (Optional)</label>
+                  <label className="text-sm font-medium text-white/60">Description</label>
                   <textarea 
                     rows="3"
                     value={newTask.description}
                     onChange={(e) => setNewTask({...newTask, description: e.target.value})}
-                    placeholder="Add some details..."
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-brand-accent-purple/50 resize-none"
-                  />
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-brand-accent-purple/50"
+                    placeholder="What do you need to accomplish?"
+                  ></textarea>
                 </div>
-                <div className="flex gap-4 pt-4">
+                <div className="flex gap-4 mt-6">
                   <button 
                     type="button"
                     onClick={() => setShowAddModal(false)}
-                    className="flex-1 px-6 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-all font-bold"
+                    className="flex-1 bg-white/5 py-3 rounded-xl font-bold hover:bg-white/10 transition-all"
                   >
                     Cancel
                   </button>
                   <button 
                     type="submit"
-                    className="flex-1 magenta-gradient px-6 py-3 rounded-xl font-bold shadow-lg shadow-magenta-500/20 hover:scale-105 transition-all"
+                    className="flex-1 magenta-gradient py-3 rounded-xl font-bold hover:scale-[1.02] transition-all"
                   >
                     Create Task
                   </button>

@@ -21,6 +21,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/tasks', require('./routes/taskRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
+app.use('/api/notes', require('./routes/noteRoutes'));
 
 app.get('/', (req, res) => {
   res.send('MENTORPET AI API is running...');
