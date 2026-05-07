@@ -87,7 +87,6 @@ const MainLayout = ({ children }) => {
     { name: 'Roadmap', icon: <Map size={20} />, path: '/dashboard/roadmap' },
     { name: 'AI Tutor', icon: <MessageSquare size={20} />, path: '/dashboard/tutor' },
     { name: 'Learn New', icon: <Sparkles size={20} />, path: '/dashboard/learn' },
-    { name: 'Notes', icon: <FileText size={20} />, path: '/dashboard/notes' },
     { name: 'Browse Jobs', icon: <Briefcase size={20} />, path: '/dashboard/jobs' },
   ];
 

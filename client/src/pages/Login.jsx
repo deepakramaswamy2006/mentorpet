@@ -121,26 +121,61 @@ const Login = () => {
         </div>
 
         {/* Right Side - Visual */}
-        <div className="hidden md:block w-1/2 relative bg-gradient-to-br from-brand-sidebar-start to-brand-sidebar-end p-12">
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-          <div className="relative h-full flex flex-col justify-between">
-            <div className="glass p-6 border-white/20 shadow-2xl backdrop-blur-xl">
-              <div className="flex gap-2 mb-4">
-                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+        <div className="hidden md:block w-1/2 relative bg-[#1A1625] p-12 overflow-hidden">
+          {/* Hexagonal Pattern Background Overlay */}
+          <div className="absolute inset-0 opacity-10" style={{ 
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l25.98 15v30L30 60 4.02 45V15z' fill-rule='evenodd' stroke='%23ffffff' stroke-width='1' fill='none'/%3E%3C/svg%3E")`,
+            backgroundSize: '40px 40px'
+          }}></div>
+          
+          <div className="relative h-full flex flex-col justify-center items-center">
+            <motion.div 
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="w-full max-w-sm bg-[#120E1A] rounded-[32px] p-10 border border-white/5 shadow-[0_40px_100px_rgba(0,0,0,0.6)]"
+            >
+              <div className="flex gap-2.5 mb-10">
+                <div className="w-3.5 h-3.5 rounded-full bg-[#FF5F57]"></div>
+                <div className="w-3.5 h-3.5 rounded-full bg-[#FFBD2E]"></div>
+                <div className="w-3.5 h-3.5 rounded-full bg-[#28C840]"></div>
               </div>
-              <h4 className="font-bold text-xl mb-4">Master Any Subject with AI</h4>
-              <div className="space-y-3">
-                <div className="h-2 w-full bg-white/10 rounded-full"><div className="h-full w-3/4 magenta-gradient rounded-full"></div></div>
-                <div className="h-2 w-full bg-white/10 rounded-full"><div className="h-full w-1/2 magenta-gradient rounded-full"></div></div>
-                <div className="h-2 w-full bg-white/10 rounded-full"><div className="h-full w-5/6 magenta-gradient rounded-full"></div></div>
+              
+              <h4 className="font-bold text-3xl text-white mb-10 leading-tight">Master Any Subject with AI</h4>
+              
+              <div className="space-y-6">
+                <div className="h-4 w-full bg-white/5 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: '75%' }}
+                    transition={{ duration: 1.5, ease: "easeOut" }}
+                    className="h-full bg-gradient-to-r from-[#A855F7] to-[#EC4899] rounded-full"
+                  />
+                </div>
+                <div className="h-4 w-full bg-white/5 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: '50%' }}
+                    transition={{ duration: 1.5, delay: 0.2, ease: "easeOut" }}
+                    className="h-full bg-gradient-to-r from-[#A855F7] to-[#EC4899] rounded-full"
+                  />
+                </div>
+                <div className="h-4 w-full bg-white/5 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: '85%' }}
+                    transition={{ duration: 1.5, delay: 0.4, ease: "easeOut" }}
+                    className="h-full bg-gradient-to-r from-[#A855F7] to-[#EC4899] rounded-full"
+                  />
+                </div>
               </div>
-            </div>
-
-            <div className="text-white">
-              <h3 className="text-2xl font-bold mb-4">"The best way to predict the future is to create it."</h3>
-              <p className="text-white/60">Start your journey towards academic excellence today with the power of artificial intelligence.</p>
+            </motion.div>
+            
+            <div className="mt-16 text-center max-w-sm">
+              <h3 className="text-xl font-bold text-white/90 mb-3">AI-Powered Excellence</h3>
+              <p className="text-white/40 text-sm leading-relaxed">
+                Unlock your full potential with personalized learning paths and intelligent study assistants.
+              </p>
             </div>
           </div>
         </div>

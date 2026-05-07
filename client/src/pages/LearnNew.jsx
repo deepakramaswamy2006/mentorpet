@@ -25,7 +25,7 @@ const skills = [
   "Time Management", "Critical Thinking", "Problem Solving", "Entrepreneurship",
   "Stock Market Basics", "Personal Branding", "Public Relations", "Sales & Negotiation",
   "Customer Psychology", "User Research", "Product Management", "SaaS Business",
-  "Internet of Things", "Robotics Basics"
+  "Internet of Things", "Robotics Basics", "Data Structures & Algorithms"
 ];
 
 const LearnNew = () => {

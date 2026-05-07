@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, User, PawPrint, Sparkles, Trash2, Command } from 'lucide-react';
+import { Send, User, PawPrint, Sparkles, Trash2, Command, Paperclip, Loader2, FileText, X } from 'lucide-react';
 import API from '../services/api';
 
 const AITutor = () => {
@@ -9,7 +9,10 @@ const AITutor = () => {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [selectedNote, setSelectedNote] = useState(null);
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -18,6 +21,35 @@ const AITutor = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, loading]);
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    setUploading(true);
+    try {
+      const res = await API.post('/notes/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      const note = res.data.data;
+      setSelectedNote(note);
+      
+      // Add a system message about the upload
+      setMessages(prev => [...prev, 
+        { role: 'user', content: `Uploaded document: ${file.name}` },
+        { role: 'assistant', content: `I've analyzed your document: **${note.title}**. \n\n**Summary:**\n${note.summary}\n\nYou can now ask me any questions about this document!` }
+      ]);
+    } catch (err) {
+      console.error('Upload Error:', err);
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I failed to upload the document. Please try again.' }]);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -29,9 +61,15 @@ const AITutor = () => {
     setLoading(true);
 
     try {
-      // Send message to Groq backend
-      const history = messages.slice(-5); // Send last 5 messages for context
-      const res = await API.post('/ai/tutor', { message: input, history });
+      let res;
+      if (selectedNote) {
+        // If a document is selected, ask about it
+        res = await API.post(`/notes/${selectedNote._id}/ask`, { question: input });
+      } else {
+        // Otherwise use general tutor
+        const history = messages.slice(-5);
+        res = await API.post('/ai/tutor', { message: input, history });
+      }
       
       setMessages(prev => [...prev, { role: 'assistant', content: res.data.data }]);
     } catch (err) {
@@ -58,13 +96,27 @@ const AITutor = () => {
             </div>
           </div>
         </div>
-        <button 
-          onClick={() => setMessages([{ role: 'assistant', content: 'Hello! How can I help you with your studies today?' }])}
-          className="text-white/20 hover:text-red-400 transition-all p-2 hover:bg-white/5 rounded-lg"
-          title="Clear Conversation"
-        >
-          <Trash2 size={20} />
-        </button>
+        <div className="flex items-center gap-4">
+          {selectedNote && (
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-brand-accent-magenta/10 border border-brand-accent-magenta/20 rounded-full text-brand-accent-magenta animate-fade-in">
+              <FileText size={14} />
+              <span className="text-xs font-bold truncate max-w-[150px]">{selectedNote.title}</span>
+              <button onClick={() => setSelectedNote(null)} className="hover:text-white ml-1">
+                <X size={14} />
+              </button>
+            </div>
+          )}
+          <button 
+            onClick={() => {
+              setMessages([{ role: 'assistant', content: 'Hello! How can I help you with your studies today?' }]);
+              setSelectedNote(null);
+            }}
+            className="text-white/20 hover:text-red-400 transition-all p-2 hover:bg-white/5 rounded-lg"
+            title="Clear Conversation"
+          >
+            <Trash2 size={20} />
+          </button>
+        </div>
       </div>
 
       {/* Messages Area */}
@@ -119,26 +171,44 @@ const AITutor = () => {
 
       {/* Input Area */}
       <div className="p-8 border-t border-white/5 bg-brand-bg/50 backdrop-blur-xl">
-        <form onSubmit={handleSend} className="relative max-w-4xl mx-auto">
-          <input 
-            type="text" 
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            disabled={loading}
-            placeholder="Ask anything about your studies... (e.g. Explain Quantum Physics in simple terms)"
-            className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 pl-6 pr-24 focus:outline-none focus:ring-2 focus:ring-brand-accent-purple/50 transition-all text-white placeholder:text-white/20"
-          />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-3">
-             <div className="hidden sm:flex items-center gap-1 text-[10px] font-black text-white/20 border border-white/5 px-2 py-1 rounded bg-white/5 uppercase tracking-widest">
-               <Command size={10} /> Enter
-             </div>
-             <button 
-               type="submit"
-               disabled={loading || !input.trim()}
-               className="w-12 h-12 rounded-xl magenta-gradient flex items-center justify-center shadow-lg shadow-magenta-500/20 hover:scale-105 active:scale-95 disabled:opacity-50 transition-all"
-             >
-               <Send size={20} className="text-white ml-0.5" />
-             </button>
+        <form onSubmit={handleSend} className="relative max-w-4xl mx-auto flex items-center gap-4">
+          <div className="relative flex-1">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="absolute left-4 top-1/2 -translate-y-1/2 p-2 text-white/40 hover:text-brand-accent-magenta transition-all disabled:opacity-50"
+              title="Upload Document"
+            >
+              {uploading ? <Loader2 className="animate-spin" size={20} /> : <Paperclip size={20} />}
+            </button>
+            <input 
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept=".pdf,.txt,.doc,.docx"
+              onChange={handleFileUpload}
+            />
+            <input 
+              type="text" 
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              disabled={loading || uploading}
+              placeholder={selectedNote ? "Ask about the document..." : "Ask anything about your studies..."}
+              className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 pl-14 pr-24 focus:outline-none focus:ring-2 focus:ring-brand-accent-purple/50 transition-all text-white placeholder:text-white/20"
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-3">
+               <div className="hidden sm:flex items-center gap-1 text-[10px] font-black text-white/20 border border-white/5 px-2 py-1 rounded bg-white/5 uppercase tracking-widest">
+                 <Command size={10} /> Enter
+               </div>
+               <button 
+                 type="submit"
+                 disabled={loading || !input.trim() || uploading}
+                 className="w-12 h-12 rounded-xl magenta-gradient flex items-center justify-center shadow-lg shadow-magenta-500/20 hover:scale-105 active:scale-95 disabled:opacity-50 transition-all"
+               >
+                 <Send size={20} className="text-white ml-0.5" />
+               </button>
+            </div>
           </div>
         </form>
         <p className="text-center text-[10px] text-white/20 mt-4 uppercase tracking-[0.2em] font-bold">
